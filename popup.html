@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="id">
+    <head>
+        <meta charset="UTF-8">
+        <title>LM Studio Assistant</title>
+        <style>
+            /* =========================================================================
+            1. PALET WARNA LIGHT MODE (DEFAULT / FALLBACK)
+            ========================================================================= */
+            :root {
+                --bg-main: #f8fafc;
+                --bg-header: #ffffff;
+                --bg-input: #ffffff;
+                --text-main: #0f172a;
+                --text-muted: #64748b;
+                --border-color: #e2e8f0;
+                --accent-color: #0284c7;
+                --accent-hover: #0369a1;
+                --badge-online-bg: #d1fae5;
+                --badge-online-text: #047857;
+                --badge-offline-bg: #fee2e2;
+                --badge-offline-text: #b91c1c;
+                --quick-btn-bg: #ffffff;
+                --quick-btn-hover: #e0f2fe;
+                --response-bg: #f1f5f9;
+            }
+
+            /* =========================================================================
+            2. PALET WARNA DARK MODE (OTOMATIS TERDETEKSI VIA PREFERS-COLOR-SCHEME)
+            ========================================================================= */
+            @media (prefers-color-scheme: dark) {
+                :root {
+                    --bg-main: #0f172a;
+                    --bg-header: #1e293b;
+                    --bg-input: #1e293b;
+                    --text-main: #f8fafc;
+                    --text-muted: #94a3b8;
+                    --border-color: #334155;
+                    --accent-color: #38bdf8;
+                    --accent-hover: #0284c7;
+                    --badge-online-bg: #059669;
+                    --badge-online-text: #ecfdf5;
+                    --badge-offline-bg: #dc2626;
+                    --badge-offline-text: #fef2f2;
+                    --quick-btn-bg: #1e293b;
+                    --quick-btn-hover: #0f172a;
+                    --response-bg: #1e293b;
+                }
+            }
+
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body {
+                width: 380px;
+                height: 560px;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                background-color: var(--bg-main);
+                color: var(--text-main);padding: 8px; /* Memberi jarak dari bingkai luar */
+                display: flex;
+                flex-direction: column;
+                /* BIKIN CORNER ROUNDED */
+                padding: 8px; /* Memberi jarak dari bingkai luar */
+                border-radius: 12px;
+                overflow: hidden; /* Penting agar isi di dalam header/footer tidak keluar dari sudut lengkung */
+                border: 1px solid var(--border-color); /* Memperjelas batas sudut melengkung */
+            }
+            .popup-container {
+                background: var(--bg-card);
+                border-radius: 12px;
+                border: 1px solid var(--border-color);
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            header {
+                background: var(--bg-header);
+                padding: 12px;
+                border-bottom: 1px solid var(--border-color);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-top-left-radius: 12px;
+                border-top-right-radius: 12px;
+            }
+            header h1 { font-size: 14px; var(--accent-color); font-weight: 600; }
+            header #version { color: var(--text-muted); font-size: 9px; }
+            .status-badge {
+                font-size: 10px;
+                padding: 2px 8px;
+                border-radius: 12px;
+                font-weight: 600;
+            }
+            .status-online { background: var(--badge-online-bg); color: var(--badge-online-text); }
+            .status-offline { background: var(--badge-offline-bg); color: var(--badge-offline-text); }
+
+            .nav-tabs { display: flex; background: var(--bg-header); border-bottom: 1px solid var(--border-color); }
+            .tab-btn {
+                flex: 1; padding: 8px; background: none; border: none;
+                color: var(--text-muted); font-size: 12px; cursor: pointer;
+            }
+            .tab-btn.active { color: var(--accent-color); border-bottom: 2px solid var(--accent-color); background: var(--bg-main); }
+
+            .content { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+            .tab-content { display: none; }
+            .tab-content.active { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+
+            label { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; display: block; }
+            input, select, textarea {
+                width: 100%; background: var(--bg-input); border: 1px solid var(--border-color);
+                border-radius: 6px; color: var(--text-main); padding: 8px; font-size: 12px; outline: none;
+            }
+            input:focus, textarea:focus { border-color: var(--accent-color); }
+            textarea { resize: vertical; min-height: 60px; }
+
+            .btn {
+                background: #0284c7; color: white; border: none; border-radius: 6px;
+                padding: 8px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+            }
+            .btn:hover { background: #0369a1; }
+            .btn-secondary { background: var(--border-color); color: var(--text-main); }
+            .btn-secondary:hover:not(:disabled) { opacity: 0.8; }
+            .btn[disabled], .btn:disabled { cursor: not-allowed; opacity: 0.4; cursor: not-allowed !important; border-color: var(--border-color) !important; }
+            .btn:hover[disabled], .btn:hover:disabled { background: #2e2e2e; }
+
+            .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+            .quick-btn {
+                background: var(--quick-btn-bg); border: 1px solid var(--border-color); color: var(--text-main);
+                padding: 6px; border-radius: 4px; font-size: 11px; cursor: pointer; text-align: left;
+            }
+            .quick-btn:hover { border-color: var(--accent-color); color: var(--accent-color); background: var(--quick-btn-hover); }
+
+            .response-box {
+                background: var(--response-bg); border: 1px solid var(--border-color); border-radius: 6px;
+                padding: 10px; font-size: 12px; line-height: 1.5; color: var(--text-main);
+                flex: 1; overflow-y: auto; white-space: pre-wrap; word-break: break-word; min-height: 120px;
+            }
+            footer {
+                padding: 6px 12px; background: var(--bg-header); border-top: 1px solid var(--border-color);
+                font-size: 10px; color: var(--text-muted); text-align: center;
+                border-bottom-left-radius: 12px;
+                border-bottom-right-radius: 12px;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <img src="icons/icon16.png"/>
+            <h1><span id="name"></span> <span id="version"></span></h1>
+            <span id="statusBadge" class="status-badge status-offline">Memeriksa...</span>
+        </header>
+        <div class="nav-tabs">
+            <button class="tab-btn active" data-tab="tab-chat">Chat & Audit</button>
+            <button class="tab-btn" data-tab="tab-settings">API Configuration</button>
+        </div>
+
+        <div class="content">
+            <!-- TAB CHAT -->
+            <div id="tab-chat" class="tab-content active">
+                <div>
+                    <label>Quick Pentest Prompt:</label>
+                    <div class="quick-actions">
+                    <button class="quick-btn" id="btnPageAudit">🔍 Audit Halaman Web</button>
+                    <button class="quick-btn" id="btnXssCheck">🧪 Cari Vector XSS</button>
+                    <button class="quick-btn" id="btnFormAudit">📝 Analisis Form HTML</button>
+                    <button class="quick-btn" id="btnSecHeaders">🛡️ Security Headers</button>
+                    </div>
+                </div>
+                <div>
+                    <label for="userPrompt">Prompt / Pertanyaan:</label>
+                    <textarea id="userPrompt" placeholder="Ketik pertanyaan atau pilih quick action..."></textarea>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button id="btnSend" class="btn" style="flex: 2;">🚀 Sent to LM Studio</button>
+                    <!-- Tombol Batal mati secara default -->
+                    <button id="btnCancel" class="btn btn-secondary" style="flex: 1;" disabled>🛑 Cancel</button>
+                    <button id="btnClear" class="btn btn-secondary" style="flex: 1;">Clear</button>
+                </div>
+
+                <label>Jawaban AI (Streaming):</label>
+                <div id="responseOutput" class="response-box">Silakan pilih aksi atau ketik prompt di atas...</div>
+
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                    <button id="btnDownloadTxt" class="btn btn-secondary" style="flex: 1; font-size: 11px;">
+                    📥 Export to TXT
+                    </button>
+                    <button id="btnDownloadJson" class="btn btn-secondary" style="flex: 1; font-size: 11px;">
+                    📊 Export to JSON
+                    </button>
+                </div>
+                </div>
+
+            <!-- TAB SETTINGS -->
+            <div id="tab-settings" class="tab-content">
+                <div>
+                    <label for="baseUrl">AI Endpoint Base URL (LM Studio / OpenAI):</label>
+                    <input type="text" id="baseUrl" value="http://localhost:8001/v1">
+                </div>
+
+                <div>
+                    <label for="apiKey">API Key / Auth Token (Opsional):</label>
+                    <input type="password" id="apiKey" placeholder="lm-studio">
+                </div>
+
+                <div>
+                    <label for="modelName">Model Target (ID):</label>
+                    <input type="text" id="modelName" value="qwen2.5-coder-7b-instruct">
+                    <button id="btnFetchModels" class="btn btn-secondary" style="margin-top: 4px; font-size: 10px; padding: 4px;">🔄 Refresh Model List</button>
+                </div>
+
+                <div>
+                    <label for="systemPrompt">System Prompt Default:</label>
+                    <textarea id="systemPrompt" style="height: 70px;">Anda adalah pakar Application Security & Code Reviewer senior. Analisis input web page/code dan berikan temuan kerentanan, PoC payload, dan solusi remediasi secara terstruktur.</textarea>
+                </div>
+
+                <div>
+                    <label for="temperature">Temperature: <span id="tempVal">0.2</span></label>
+                    <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.2">
+                </div>
+
+                <button id="btnSaveSettings" class="btn">💾 Save</button>
+                <div id="settingsNotice" style="font-size: 11px; color: var(--text-main); text-align: center;"></div>
+            </div>
+        </div>
+        <script src="popup.js"></script>
+    </body>
+</html>
